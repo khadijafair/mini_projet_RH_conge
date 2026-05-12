@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="~{fragments/layout :: head}">
+    <title>Demandes de Congé</title>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: navbar}"></div>
+<div class="container-fluid py-4 px-4">
+
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">
+            <i class="bi bi-file-earmark-text text-primary me-2"></i>Demandes de Congé
+        </h2>
+        <a th:href="@{/demandes/new}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Nouvelle Demande
+        </a>
+    </div>
+
+    <!-- FILTRES -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body">
+            <form th:action="@{/demandes}" method="get" class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Statut</label>
+                    <select name="statut" class="form-select form-select-sm">
+                        <option value="">Tous les statuts</option>
+                        <option th:each="s : ${statuts}"
+                                th:value="${s.name()}"
+                                th:text="${s.libelle}"
+                                th:selected="${s.name() == selectedStatut}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Département</label>
+                    <select name="departement" class="form-select form-select-sm">
+                        <option value="">Tous</option>
+                        <option th:each="d : ${departements}"
+                                th:value="${d}"
+                                th:text="${d}"
+                                th:selected="${d == selectedDept}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Type de congé</label>
+                    <select name="typeCongeId" class="form-select form-select-sm">
+                        <option value="">Tous types</option>
+                        <option th:each="t : ${types}"
+                                th:value="${t.id}"
+                                th:text="${t.libelle}"
+                                th:selected="${t.id == selectedType}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Début après</label>
+                    <input type="date" name="dateDebut" class="form-control form-control-sm"
+                           th:value="${selectedDebut}"/>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Fin avant</label>
+                    <input type="date" name="dateFin" class="form-control form-control-sm"
+                           th:value="${selectedFin}"/>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-outline-primary flex-fill">
+                        <i class="bi bi-funnel me-1"></i>Filtrer
+                    </button>
+                    <a th:href="@{/demandes}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TABLEAU -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Employé</th>
+                        <th>Département</th>
+                        <th>Type</th>
+                        <th>Date début</th>
+                        <th>Date fin</th>
+                        <th>Jours</th>
+                        <th>Statut</th>
+                        <th>Motif</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(demandes)}">
+                        <td colspan="10" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                            Aucune demande trouvée
+                        </td>
+                    </tr>
+                    <tr th:each="d : ${demandes}">
+                        <td class="text-muted small" th:text="${d.id}"></td>
+                        <td class="fw-semibold" th:text="${d.employe.nom}"></td>
+                        <td>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary"
+                                  th:text="${d.employe.departement}"></span>
+                        </td>
+                        <td th:text="${d.typeConge.libelle}"></td>
+                        <td th:text="${#temporals.format(d.dateDebut, 'dd/MM/yyyy')}"></td>
+                        <td th:text="${#temporals.format(d.dateFin, 'dd/MM/yyyy')}"></td>
+                        <td>
+                            <span class="badge bg-info text-dark" th:text="${d.nombreJours} + ' j'"></span>
+                        </td>
+                        <td>
+                            <span th:class="${'badge ' +
+                                (d.statut.name() == 'ACCEPTE' ? 'bg-success' :
+                                 d.statut.name() == 'REFUSE'  ? 'bg-danger'  : 'bg-warning text-dark')}"
+                                  th:text="${d.statut.libelle}">
+                            </span>
+                        </td>
+                        <td class="text-muted small"
+                            th:text="${d.motif != null ? d.motif : '–'}"></td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <!-- Valider / Rejeter uniquement si EN_ATTENTE -->
+                                <a th:if="${d.statut.name() == 'EN_ATTENTE'}"
+                                   th:href="@{/demandes/valider/{id}(id=${d.id})}"
+                                   class="btn btn-success btn-sm" title="Valider"
+                                   onclick="return confirm('Valider cette demande ?')">
+                                    <i class="bi bi-check-lg"></i>
+                                </a>
+                                <a th:if="${d.statut.name() == 'EN_ATTENTE'}"
+                                   th:href="@{/demandes/rejeter/{id}(id=${d.id})}"
+                                   class="btn btn-danger btn-sm" title="Rejeter"
+                                   onclick="return confirm('Rejeter cette demande ?')">
+                                    <i class="bi bi-x-lg"></i>
+                                </a>
+                                <a th:href="@{/demandes/edit/{id}(id=${d.id})}"
+                                   class="btn btn-outline-secondary btn-sm" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a th:href="@{/demandes/delete/{id}(id=${d.id})}"
+                                   class="btn btn-outline-danger btn-sm" title="Supprimer"
+                                   onclick="return confirm('Supprimer cette demande ?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer text-muted small d-flex justify-content-between">
+            <span th:text="${#lists.size(demandes)} + ' demande(s) affichée(s)'"></span>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

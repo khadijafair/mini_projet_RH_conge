@@ -1,0 +1,94 @@
+/* ===========================
+   RH Congés – Custom Styles
+   =========================== */
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Navbar */
+.navbar-brand {
+    font-size: 1.1rem;
+    letter-spacing: 0.02em;
+}
+
+/* Cards */
+.card {
+    border-radius: 0.75rem;
+}
+
+.card-header {
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+    font-size: 0.95rem;
+}
+
+/* Tables */
+.table > thead > tr > th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6c757d;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table > tbody > tr > td {
+    font-size: 0.9rem;
+    vertical-align: middle;
+}
+
+/* Badge statuts */
+.badge {
+    font-weight: 500;
+    font-size: 0.78rem;
+    padding: 0.35em 0.7em;
+    border-radius: 6px;
+}
+
+/* Boutons */
+.btn-sm {
+    font-size: 0.78rem;
+    padding: 0.25rem 0.55rem;
+}
+
+/* Progress bar */
+.progress {
+    border-radius: 10px;
+    background-color: #e9ecef;
+}
+.progress-bar {
+    border-radius: 10px;
+    transition: width 0.6s ease;
+}
+
+/* KPI cards */
+.border-start.border-3 {
+    border-left-width: 4px !important;
+}
+
+/* Alert */
+.alert {
+    border-radius: 0.6rem;
+    font-size: 0.9rem;
+}
+
+/* Form controls */
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    font-size: 0.85rem;
+}
+
+/* Table footer */
+.card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    border-radius: 0 0 0.75rem 0.75rem;
+    font-size: 0.82rem;
+    padding: 0.5rem 1rem;
+}

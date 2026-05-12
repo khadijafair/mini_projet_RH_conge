@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Type de Congé</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<nav class="navbar navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/}">
+            <i class="bi bi-calendar3-week me-2"></i>RH Congés
+        </a>
+    </div>
+</nav>
+
+<div class="container py-4" style="max-width:550px">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/types-conge}">Types de congé</a></li>
+            <li class="breadcrumb-item active"
+                th:text="${typeConge.id == null ? 'Nouveau' : 'Modifier'}"></li>
+        </ol>
+    </nav>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-tag text-primary me-2"></i>
+                <span th:text="${typeConge.id == null ? 'Créer un type de congé' : 'Modifier le type'}"></span>
+            </h5>
+        </div>
+        <div class="card-body p-4">
+            <form th:action="@{/types-conge/save}" th:object="${typeConge}" method="post">
+                <input type="hidden" th:field="*{id}"/>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Libellé <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{libelle}" class="form-control"
+                           th:classappend="${#fields.hasErrors('libelle')} ? 'is-invalid'"
+                           placeholder="ex: Congé Annuel, Congé Maladie…"/>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('libelle')}"
+                         th:errors="*{libelle}"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Quota annuel (jours) <span class="text-danger">*</span></label>
+                    <input type="number" th:field="*{quotaAnnuel}" class="form-control"
+                           th:classappend="${#fields.hasErrors('quotaAnnuel')} ? 'is-invalid'"
+                           min="1" max="365" placeholder="ex: 30"/>
+                    <div class="form-text">Nombre maximum de jours autorisés par an.</div>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('quotaAnnuel')}"
+                         th:errors="*{quotaAnnuel}"></div>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end">
+                    <a th:href="@{/types-conge}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Annuler
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i>Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

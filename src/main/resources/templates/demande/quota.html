@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Quota de congé</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<nav class="navbar navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/demandes}">
+            <i class="bi bi-calendar3-week me-2"></i>RH Congés
+        </a>
+    </div>
+</nav>
+
+<div class="container py-5" style="max-width:600px">
+    <div class="card border-0 shadow">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Suivi du Quota</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="mb-3">
+                <strong>Employé :</strong>
+                <span th:text="${employe.nom}"></span>
+            </div>
+            <div class="mb-3">
+                <strong>Type de congé :</strong>
+                <span th:text="${type.libelle}"></span>
+            </div>
+            <div class="mb-3">
+                <strong>Année :</strong>
+                <span th:text="${annee}"></span>
+            </div>
+
+            <hr/>
+
+            <div class="row text-center mb-4">
+                <div class="col">
+                    <div class="fs-1 fw-bold text-primary" th:text="${type.quotaAnnuel}"></div>
+                    <div class="text-muted small">Quota annuel</div>
+                </div>
+                <div class="col">
+                    <div class="fs-1 fw-bold text-danger" th:text="${consommes}"></div>
+                    <div class="text-muted small">Jours consommés</div>
+                </div>
+                <div class="col">
+                    <div class="fs-1 fw-bold text-success" th:text="${restants}"></div>
+                    <div class="text-muted small">Jours restants</div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small">Progression</label>
+                <div class="progress" style="height:20px">
+                    <div class="progress-bar bg-primary"
+                         th:style="'width:' + (${consommes * 100 / type.quotaAnnuel}) + '%'"
+                         th:text="${consommes} + ' / ' + ${type.quotaAnnuel} + ' j'">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer text-end">
+            <a th:href="@{/demandes}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Retour
+            </a>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

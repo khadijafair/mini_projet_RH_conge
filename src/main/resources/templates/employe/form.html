@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${employe.id == null ? 'Nouvel employé' : 'Modifier employé'}">Employé</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<nav class="navbar navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/}">
+            <i class="bi bi-calendar3-week me-2"></i>RH Congés
+        </a>
+    </div>
+</nav>
+
+<div class="container py-4" style="max-width:600px">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/employes}">Employés</a></li>
+            <li class="breadcrumb-item active"
+                th:text="${employe.id == null ? 'Nouveau' : 'Modifier'}"></li>
+        </ol>
+    </nav>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-person-plus text-primary me-2"></i>
+                <span th:text="${employe.id == null ? 'Ajouter un employé' : 'Modifier l\'employé'}"></span>
+            </h5>
+        </div>
+        <div class="card-body p-4">
+            <form th:action="@{/employes/save}" th:object="${employe}" method="post">
+                <input type="hidden" th:field="*{id}"/>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nom complet <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{nom}" class="form-control"
+                           th:classappend="${#fields.hasErrors('nom')} ? 'is-invalid'"
+                           placeholder="ex: Mohamed Alaoui"/>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('nom')}"
+                         th:errors="*{nom}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{departement}" class="form-control"
+                           th:classappend="${#fields.hasErrors('departement')} ? 'is-invalid'"
+                           placeholder="ex: Informatique, RH, Finance…"
+                           list="depts"/>
+                    <datalist id="depts">
+                        <option value="Informatique"/>
+                        <option value="RH"/>
+                        <option value="Finance"/>
+                        <option value="Marketing"/>
+                        <option value="Commercial"/>
+                        <option value="Direction"/>
+                    </datalist>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('departement')}"
+                         th:errors="*{departement}"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Date d'embauche <span class="text-danger">*</span></label>
+                    <input type="date" th:field="*{dateEmbauche}" class="form-control"
+                           th:classappend="${#fields.hasErrors('dateEmbauche')} ? 'is-invalid'"/>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('dateEmbauche')}"
+                         th:errors="*{dateEmbauche}"></div>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end">
+                    <a th:href="@{/employes}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Annuler
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i>Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

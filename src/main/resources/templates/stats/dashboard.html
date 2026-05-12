@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Statistiques RH</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/demandes}">
+            <i class="bi bi-calendar3-week me-2"></i>RH Congés
+        </a>
+        <div class="navbar-nav ms-3 flex-row gap-3">
+            <a class="nav-link text-white" th:href="@{/demandes}"><i class="bi bi-file-earmark-text me-1"></i>Demandes</a>
+            <a class="nav-link text-white" th:href="@{/employes}"><i class="bi bi-people me-1"></i>Employés</a>
+            <a class="nav-link text-white" th:href="@{/types-conge}"><i class="bi bi-tags me-1"></i>Types</a>
+            <a class="nav-link text-white active" th:href="@{/stats}"><i class="bi bi-bar-chart-line me-1"></i>Stats</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid py-4 px-4">
+    <h2 class="fw-bold mb-4">
+        <i class="bi bi-bar-chart-line text-primary me-2"></i>Tableau de Bord – Statistiques
+    </h2>
+
+    <!-- KPIs -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body py-4">
+                    <div class="fs-1 fw-bold text-primary" th:text="${statsGlobales.total}">0</div>
+                    <div class="text-muted">Total demandes</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center border-start border-success border-3">
+                <div class="card-body py-4">
+                    <div class="fs-1 fw-bold text-success" th:text="${statsGlobales.acceptes}">0</div>
+                    <div class="text-muted">Acceptées</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center border-start border-danger border-3">
+                <div class="card-body py-4">
+                    <div class="fs-1 fw-bold text-danger" th:text="${statsGlobales.refuses}">0</div>
+                    <div class="text-muted">Refusées</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center border-start border-warning border-3">
+                <div class="card-body py-4">
+                    <div class="fs-1 fw-bold text-warning" th:text="${statsGlobales.tauxAcceptation} + '%'">0%</div>
+                    <div class="text-muted">Taux d'acceptation</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Graphique : jours par département -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white fw-semibold border-bottom">
+                    <i class="bi bi-building me-2 text-primary"></i>Jours consommés par département
+                </div>
+                <div class="card-body">
+                    <canvas id="chartDept" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphique : taux par type de congé -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white fw-semibold border-bottom">
+                    <i class="bi bi-pie-chart me-2 text-primary"></i>Demandes par type de congé
+                </div>
+                <div class="card-body">
+                    <canvas id="chartType" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table détaillée par type -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-semibold border-bottom">
+                    <i class="bi bi-table me-2 text-primary"></i>Détail par type de congé
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Type de congé</th>
+                            <th>Total demandes</th>
+                            <th>Acceptées</th>
+                            <th>Taux d'acceptation</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="s : ${statsParType}">
+                            <td class="fw-semibold" th:text="${s.libelle}"></td>
+                            <td th:text="${s.total}"></td>
+                            <td>
+                                <span class="badge bg-success" th:text="${s.acceptes}"></span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-fill" style="height:8px">
+                                        <div class="progress-bar bg-success"
+                                             th:style="'width:' + ${s.taux} + '%'"></div>
+                                    </div>
+                                    <small th:text="${s.taux} + '%'" class="text-muted"></small>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(statsParType)}">
+                            <td colspan="4" class="text-center text-muted py-4">Aucune donnée</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script th:inline="javascript">
+    // Données injectées depuis Thymeleaf
+    const joursParDept  = /*[[${joursParDept}]]*/  {};
+    const statsParType  = /*[[${statsParType}]]*/ [];
+
+    // ---- Bar Chart : jours par département ----
+    const deptLabels = Object.keys(joursParDept);
+    const deptData   = Object.values(joursParDept);
+
+    new Chart(document.getElementById('chartDept'), {
+        type: 'bar',
+        data: {
+            labels: deptLabels,
+            datasets: [{
+                label: 'Jours consommés',
+                data: deptData,
+                backgroundColor: 'rgba(13,110,253,0.7)',
+                borderColor: 'rgba(13,110,253,1)',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+
+    // ---- Doughnut : demandes par type ----
+    const typeLabels = statsParType.map(s => s.libelle);
+    const typeData   = statsParType.map(s => s.total);
+    const palette    = ['#0d6efd','#198754','#dc3545','#ffc107','#0dcaf0','#6f42c1'];
+
+    new Chart(document.getElementById('chartType'), {
+        type: 'doughnut',
+        data: {
+            labels: typeLabels,
+            datasets: [{
+                data: typeData,
+                backgroundColor: palette.slice(0, typeLabels.length),
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+</script>
+</body>
+</html>
