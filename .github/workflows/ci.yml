@@ -23,7 +23,7 @@ jobs:
       - name: Résumé (tests et couverture)
         if: always()
         run: |
-          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
           import csv, glob, xml.etree.ElementTree as ET
           tests = fails = 0
           for f in glob.glob("target/surefire-reports/TEST-*.xml"):
