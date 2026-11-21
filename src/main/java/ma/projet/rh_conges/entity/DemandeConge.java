@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "demandes_conge")
@@ -44,11 +43,8 @@ public class DemandeConge {
     @NotNull(message = "Le type de congé est obligatoire")
     private TypeConge typeConge;
 
-    /**
-     * Calcule le nombre de jours ouvrés de la demande (jours calendaires inclusif)
-     */
-    public long getNombreJours() {
-        if (dateDebut == null || dateFin == null) return 0;
-        return ChronoUnit.DAYS.between(dateDebut, dateFin) + 1;
-    }
+    /** Jours ouvrés (hors week-ends et jours fériés), calculés à la soumission. */
+    @Column(nullable = false)
+    private int nombreJours;
+
 }

@@ -33,7 +33,8 @@ public class Employe {
     @Column(nullable = false)
     private LocalDate dateEmbauche;
 
-    @OneToMany(mappedBy = "employe", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // Pas de cascade : supprimer un employé ne doit jamais effacer son historique de congés.
+    @OneToMany(mappedBy = "employe", fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<DemandeConge> demandes;

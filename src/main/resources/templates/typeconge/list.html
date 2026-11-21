@@ -8,20 +8,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" th:href="@{/demandes}">
-            <i class="bi bi-calendar3-week me-2"></i>RH Congés
-        </a>
-        <div class="navbar-nav ms-3 flex-row gap-3">
-            <a class="nav-link text-white" th:href="@{/demandes}"><i class="bi bi-file-earmark-text me-1"></i>Demandes</a>
-            <a class="nav-link text-white" th:href="@{/employes}"><i class="bi bi-people me-1"></i>Employés</a>
-            <a class="nav-link text-white active" th:href="@{/types-conge}"><i class="bi bi-tags me-1"></i>Types</a>
-            <a class="nav-link text-white" th:href="@{/stats}"><i class="bi bi-bar-chart-line me-1"></i>Stats</a>
-        </div>
-    </div>
-</nav>
-
+<div th:replace="~{fragments/layout :: navbar}"></div>
 <div class="container py-4" style="max-width:900px">
     <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show">
         <i class="bi bi-check-circle me-2"></i><span th:text="${successMsg}"></span>
@@ -59,11 +46,12 @@
                        class="btn btn-sm btn-outline-secondary">
                         <i class="bi bi-pencil me-1"></i>Modifier
                     </a>
-                    <a th:href="@{/types-conge/delete/{id}(id=${t.id})}"
-                       class="btn btn-sm btn-outline-danger"
-                       onclick="return confirm('Supprimer ce type de congé ?')">
+                    <form th:action="@{/types-conge/{id}/supprimer(id=${t.id})}" method="post" class="d-inline"
+                                  onsubmit="return confirm('Supprimer ce type de congé ?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
                         <i class="bi bi-trash me-1"></i>Supprimer
-                    </a>
+                    </button>
+                            </form>
                 </div>
             </div>
         </div>

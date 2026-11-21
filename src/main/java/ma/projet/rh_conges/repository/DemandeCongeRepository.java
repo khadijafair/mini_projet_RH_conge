@@ -20,9 +20,14 @@ public interface DemandeCongeRepository extends JpaRepository<DemandeConge, Long
 
     List<DemandeConge> findByEmployeId(Long employeId);
 
+    boolean existsByEmployeId(Long employeId);
+
+    boolean existsByTypeCongeId(Long typeCongeId);
+
     // Combined filters with fetch to avoid N+1
-    @Query("SELECT d FROM DemandeConge d JOIN FETCH d.employe e JOIN FETCH d.typeConge t WHERE (:statut IS NULL OR d.statut = :statut) AND (:departement IS NULL OR e.departement = :departement) AND (:typeCongeId IS NULL OR t.id = :typeCongeId) AND (:dateDebut IS NULL OR d.dateDebut >= :dateDebut) AND (:dateFin IS NULL OR d.dateFin <= :dateFin) ORDER BY d.dateDebut DESC")
+    @Query("SELECT d FROM DemandeConge d JOIN FETCH d.employe e JOIN FETCH d.typeConge t WHERE (:employeId IS NULL OR e.id = :employeId) AND (:statut IS NULL OR d.statut = :statut) AND (:departement IS NULL OR e.departement = :departement) AND (:typeCongeId IS NULL OR t.id = :typeCongeId) AND (:dateDebut IS NULL OR d.dateDebut >= :dateDebut) AND (:dateFin IS NULL OR d.dateFin <= :dateFin) ORDER BY d.dateDebut DESC")
     List<DemandeConge> findWithFilters(
+            @Param("employeId") Long employeId,
             @Param("statut") StatutDemande statut,
             @Param("departement") String departement,
             @Param("typeCongeId") Long typeCongeId,

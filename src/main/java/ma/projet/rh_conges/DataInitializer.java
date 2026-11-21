@@ -3,17 +3,25 @@ package ma.projet.rh_conges;
 import lombok.RequiredArgsConstructor;
 import ma.projet.rh_conges.entity.*;
 import ma.projet.rh_conges.repository.*;
+import ma.projet.rh_conges.service.JoursOuvresCalculator;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 
+/** Données de démonstration, chargées uniquement avec le profil dev (H2 en mémoire). */
 @Component
+@Profile("dev")
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
     private final EmployeRepository employeRepo;
     private final TypeCongeRepository typeCongeRepo;
     private final DemandeCongeRepository demandeRepo;
+    private final UtilisateurRepository utilisateurRepo;
+    private final JoursOuvresCalculator joursOuvres;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
@@ -46,46 +54,68 @@ public class DataInitializer implements CommandLineRunner {
                 .dateEmbauche(LocalDate.of(2022, 4, 5)).build());
 
         // ---- Demandes de congé ----
-        demandeRepo.save(DemandeConge.builder()
+        demandeRepo.save(avecJours(DemandeConge.builder()
                 .employe(e1).typeConge(ca)
                 .dateDebut(LocalDate.of(2025, 7, 1)).dateFin(LocalDate.of(2025, 7, 15))
-                .motif("Vacances d'été en famille").statut(StatutDemande.ACCEPTE).build());
+                .motif("Vacances d'été en famille").statut(StatutDemande.ACCEPTE).build()));
 
-        demandeRepo.save(DemandeConge.builder()
+        demandeRepo.save(avecJours(DemandeConge.builder()
                 .employe(e1).typeConge(exc)
                 .dateDebut(LocalDate.of(2025, 10, 2)).dateFin(LocalDate.of(2025, 10, 4))
-                .motif("Mariage d'un proche").statut(StatutDemande.ACCEPTE).build());
+                .motif("Mariage d'un proche").statut(StatutDemande.ACCEPTE).build()));
 
-        demandeRepo.save(DemandeConge.builder()
+        demandeRepo.save(avecJours(DemandeConge.builder()
                 .employe(e2).typeConge(mal)
                 .dateDebut(LocalDate.of(2025, 3, 10)).dateFin(LocalDate.of(2025, 3, 17))
-                .motif("Grippe").statut(StatutDemande.ACCEPTE).build());
+                .motif("Grippe").statut(StatutDemande.ACCEPTE).build()));
 
-        demandeRepo.save(DemandeConge.builder()
+        demandeRepo.save(avecJours(DemandeConge.builder()
                 .employe(e3).typeConge(ca)
                 .dateDebut(LocalDate.of(2025, 8, 5)).dateFin(LocalDate.of(2025, 8, 20))
-                .motif("Voyage Marrakech").statut(StatutDemande.REFUSE).build());
+                .motif("Voyage Marrakech").statut(StatutDemande.REFUSE).build()));
 
-        demandeRepo.save(DemandeConge.builder()
+        demandeRepo.save(avecJours(DemandeConge.builder()
                 .employe(e4).typeConge(ca)
                 .dateDebut(LocalDate.now().plusDays(5)).dateFin(LocalDate.now().plusDays(15))
-                .motif("Repos").statut(StatutDemande.EN_ATTENTE).build());
+                .motif("Repos").statut(StatutDemande.EN_ATTENTE).build()));
 
-        demandeRepo.save(DemandeConge.builder()
+        demandeRepo.save(avecJours(DemandeConge.builder()
                 .employe(e5).typeConge(mal)
                 .dateDebut(LocalDate.now().plusDays(1)).dateFin(LocalDate.now().plusDays(3))
-                .motif("Consultation médicale").statut(StatutDemande.EN_ATTENTE).build());
+                .motif("Consultation médicale").statut(StatutDemande.EN_ATTENTE).build()));
 
-        demandeRepo.save(DemandeConge.builder()
+        demandeRepo.save(avecJours(DemandeConge.builder()
                 .employe(e2).typeConge(ca)
                 .dateDebut(LocalDate.of(2025, 12, 23)).dateFin(LocalDate.of(2026, 1, 3))
-                .motif("Fêtes de fin d'année").statut(StatutDemande.ACCEPTE).build());
+                .motif("Fêtes de fin d'année").statut(StatutDemande.ACCEPTE).build()));
 
-        demandeRepo.save(DemandeConge.builder()
+        demandeRepo.save(avecJours(DemandeConge.builder()
                 .employe(e3).typeConge(exc)
                 .dateDebut(LocalDate.now().plusDays(10)).dateFin(LocalDate.now().plusDays(12))
-                .motif("Décès d'un parent").statut(StatutDemande.EN_ATTENTE).build());
+                .motif("Décès d'un parent").statut(StatutDemande.EN_ATTENTE).build()));
+
+        // ---- Comptes de démonstration (mot de passe : identifiant + "123") ----
+        compte("rh", Role.RH, null);
+        compte("karim", Role.EMPLOYE, e1);
+        compte("fatima", Role.EMPLOYE, e2);
+        compte("youssef", Role.EMPLOYE, e3);
+        compte("houda", Role.EMPLOYE, e4);
+        compte("mohamed", Role.EMPLOYE, e5);
 
         System.out.println("✅ Données de test chargées avec succès !");
+    }
+
+    private DemandeConge avecJours(DemandeConge d) {
+        d.setNombreJours(joursOuvres.compter(d.getDateDebut(), d.getDateFin()));
+        return d;
+    }
+
+    private void compte(String username, Role role, Employe employe) {
+        utilisateurRepo.save(Utilisateur.builder()
+                .username(username)
+                .password(passwordEncoder.encode(username + "123"))
+                .role(role)
+                .employe(employe)
+                .build());
     }
 }
