@@ -89,7 +89,7 @@ class SecuriteEtParcoursTest {
     void visiteurAnonyme_redirigeVersLaConnexion() throws Exception {
         mvc.perform(get("/demandes"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("**/login"));
+                .andExpect(redirectedUrl("/login"));
     }
 
     @Test
