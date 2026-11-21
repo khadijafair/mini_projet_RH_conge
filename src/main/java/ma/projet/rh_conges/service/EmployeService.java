@@ -5,6 +5,7 @@ import ma.projet.rh_conges.entity.Employe;
 import ma.projet.rh_conges.entity.Role;
 import ma.projet.rh_conges.entity.Utilisateur;
 import ma.projet.rh_conges.exception.DemandeCongeException;
+import ma.projet.rh_conges.exception.RessourceIntrouvableException;
 import ma.projet.rh_conges.repository.DemandeCongeRepository;
 import ma.projet.rh_conges.repository.EmployeRepository;
 import ma.projet.rh_conges.repository.UtilisateurRepository;
@@ -29,7 +30,7 @@ public class EmployeService {
 
     public Employe findById(Long id) {
         return employeRepository.findById(id)
-                .orElseThrow(() -> new DemandeCongeException("Employé introuvable avec l'id : " + id));
+                .orElseThrow(() -> new RessourceIntrouvableException("Employé introuvable avec l'id : " + id));
     }
 
     public Employe save(Employe employe) {

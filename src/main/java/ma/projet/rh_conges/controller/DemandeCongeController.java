@@ -82,7 +82,7 @@ public class DemandeCongeController {
                        RedirectAttributes ra) {
         boolean rh = utilisateurCourant.estRH(auth);
         if (demande.getId() != null) {
-            verifierModifiable(auth, demandeCongeService.findById(demande.getId()));
+            utilisateurCourant.verifierModifiable(auth, demandeCongeService.findById(demande.getId()));
         }
         if (!rh) {
             // L'employé ne peut déposer une demande que pour lui-même.
@@ -112,7 +112,7 @@ public class DemandeCongeController {
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Authentication auth, Model model) {
         DemandeConge demande = demandeCongeService.findById(id);
-        verifierModifiable(auth, demande);
+        utilisateurCourant.verifierModifiable(auth, demande);
         model.addAttribute("demande", demande);
         remplirListes(model);
         return "demande/form";
@@ -142,19 +142,10 @@ public class DemandeCongeController {
 
     @PostMapping("/{id}/supprimer")
     public String delete(@PathVariable Long id, Authentication auth, RedirectAttributes ra) {
-        verifierModifiable(auth, demandeCongeService.findById(id));
+        utilisateurCourant.verifierModifiable(auth, demandeCongeService.findById(id));
         demandeCongeService.deleteById(id);
         ra.addFlashAttribute("successMsg", "Demande supprimée.");
         return "redirect:/demandes";
-    }
-
-    /** RH : toute demande. Employé : seulement ses demandes encore en attente. */
-    private void verifierModifiable(Authentication auth, DemandeConge demande) {
-        if (utilisateurCourant.estRH(auth)) return;
-        utilisateurCourant.verifierAcces(auth, demande.getEmploye().getId());
-        if (demande.getStatut() != StatutDemande.EN_ATTENTE) {
-            throw new AccessDeniedException("Une demande déjà traitée ne peut plus être modifiée");
-        }
     }
 
     private void remplirListes(Model model) {

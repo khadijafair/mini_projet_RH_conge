@@ -67,7 +67,7 @@
                         <option value="">-- Sélectionner un type --</option>
                         <option th:each="t : ${types}"
                                 th:value="${t.id}"
-                                th:text="${t.libelle + ' (quota: ' + t.quotaAnnuel + ' j)'}">
+                                th:text="${t.calculLegal ? t.libelle + ' (droits selon ancienneté)' : t.libelle + ' (quota : ' + t.quotaAnnuel + ' j)'}">
                         </option>
                     </select>
                     <div class="invalid-feedback" th:if="${#fields.hasErrors('typeConge')}"

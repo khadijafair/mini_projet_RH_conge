@@ -1,7 +1,9 @@
 package ma.projet.rh_conges.security;
 
 import lombok.RequiredArgsConstructor;
+import ma.projet.rh_conges.entity.DemandeConge;
 import ma.projet.rh_conges.entity.Employe;
+import ma.projet.rh_conges.entity.StatutDemande;
 import ma.projet.rh_conges.entity.Utilisateur;
 import ma.projet.rh_conges.repository.UtilisateurRepository;
 import org.springframework.security.access.AccessDeniedException;
@@ -32,6 +34,15 @@ public class UtilisateurCourant {
         return utilisateurRepository.findByUsername(auth.getName())
                 .map(Utilisateur::getEmploye)
                 .orElse(null);
+    }
+
+    /** RH : toute demande. Employé : seulement ses propres demandes encore en attente. */
+    public void verifierModifiable(Authentication auth, DemandeConge demande) {
+        if (estRH(auth)) return;
+        verifierAcces(auth, demande.getEmploye().getId());
+        if (demande.getStatut() != StatutDemande.EN_ATTENTE) {
+            throw new AccessDeniedException("Une demande déjà traitée ne peut plus être modifiée");
+        }
     }
 
     /** Un employé n'accède qu'à ses propres données ; le RH accède à tout. */

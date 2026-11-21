@@ -48,7 +48,8 @@ class DemandeCongeServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DemandeCongeService(demandeRepo, typeRepo, employeRepo, new JoursOuvresCalculator(""));
+        service = new DemandeCongeService(demandeRepo, typeRepo, employeRepo,
+                new JoursOuvresCalculator(""), new DroitsCongeCalculator());
         when(employeRepo.findById(1L)).thenReturn(Optional.of(karim));
         when(typeRepo.findById(10L)).thenReturn(Optional.of(annuel));
         when(typeRepo.findAll()).thenReturn(List.of(annuel));
@@ -198,6 +199,50 @@ class DemandeCongeServiceTest {
     void demandeIntrouvable_leveUneErreurMetier() {
         when(demandeRepo.findById(999L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.findById(999L)).isInstanceOf(DemandeCongeException.class);
+    }
+
+    // ---- Congé annuel légal (Code du travail) ----
+
+    private final TypeConge legal = TypeConge.builder().id(20L).libelle("Congé Annuel").quotaAnnuel(30)
+            .calculLegal(true).build();
+
+    private DemandeConge legale(String debut, String fin) {
+        DemandeConge d = nouvelle(debut, fin);
+        d.setTypeConge(TypeConge.builder().id(20L).build());
+        return d;
+    }
+
+    @Test
+    void congeLegal_refuseAvantSixMoisDeService() {
+        when(typeRepo.findById(20L)).thenReturn(Optional.of(legal));
+        karim.setDateEmbauche(LocalDate.of(2026, 9, 1));
+
+        assertThatThrownBy(() -> service.soumettreDemande(legale("2026-11-23", "2026-11-27")))
+                .hasMessageContaining("6 mois de service");
+    }
+
+    @Test
+    void congeLegal_quotaSelonAncienneteEtReport() {
+        when(typeRepo.findById(20L)).thenReturn(Optional.of(legal));
+        when(typeRepo.findAll()).thenReturn(List.of(legal));
+        // embauché le 15/03/2019 : 7 ans au 31/12/2026 -> 18 + 1,5 = 19 jours ; 2025 : 19 jours dont 11 pris -> report 8
+        DemandeConge prise2025 = DemandeConge.builder().id(200L).employe(karim).typeConge(legal)
+                .dateDebut(LocalDate.parse("2025-07-01")).dateFin(LocalDate.parse("2025-07-15"))
+                .nombreJours(11).statut(StatutDemande.ACCEPTE).build();
+        existantes.add(prise2025);
+
+        SoldeConge solde = service.getSoldes(1L, 2026).get(0);
+        assertThat(solde.report()).isEqualTo(8);
+        assertThat(solde.quota()).isEqualTo(27);
+
+        // 25 jours déjà réservés sur 27 : 2 jours passent, 4 non
+        existantes.add(DemandeConge.builder().id(201L).employe(karim).typeConge(legal)
+                .dateDebut(LocalDate.parse("2026-06-01")).dateFin(LocalDate.parse("2026-07-03"))
+                .nombreJours(25).statut(StatutDemande.EN_ATTENTE).build());
+        assertThatThrownBy(() -> service.soumettreDemande(legale("2026-09-01", "2026-09-04")))
+                .isInstanceOfSatisfying(QuotaDepasseException.class,
+                        e -> assertThat(e.getJoursDisponibles()).isEqualTo(2));
+        assertThat(service.soumettreDemande(legale("2026-09-01", "2026-09-02")).getNombreJours()).isEqualTo(2);
     }
 
     // ---- Soldes et statistiques ----

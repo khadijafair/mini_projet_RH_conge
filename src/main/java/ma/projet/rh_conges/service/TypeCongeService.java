@@ -3,6 +3,7 @@ package ma.projet.rh_conges.service;
 import lombok.RequiredArgsConstructor;
 import ma.projet.rh_conges.entity.TypeConge;
 import ma.projet.rh_conges.exception.DemandeCongeException;
+import ma.projet.rh_conges.exception.RessourceIntrouvableException;
 import ma.projet.rh_conges.repository.DemandeCongeRepository;
 import ma.projet.rh_conges.repository.TypeCongeRepository;
 import org.springframework.stereotype.Service;
@@ -23,7 +24,7 @@ public class TypeCongeService {
 
     public TypeConge findById(Long id) {
         return typeCongeRepository.findById(id)
-                .orElseThrow(() -> new DemandeCongeException("Type de congé introuvable avec l'id : " + id));
+                .orElseThrow(() -> new RessourceIntrouvableException("Type de congé introuvable avec l'id : " + id));
     }
 
     public TypeConge save(TypeConge typeConge) {

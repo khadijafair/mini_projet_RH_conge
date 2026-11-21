@@ -7,9 +7,12 @@ import ma.projet.rh_conges.entity.StatutDemande;
 import ma.projet.rh_conges.entity.TypeConge;
 import ma.projet.rh_conges.exception.DemandeCongeException;
 import ma.projet.rh_conges.exception.QuotaDepasseException;
+import ma.projet.rh_conges.exception.RessourceIntrouvableException;
 import ma.projet.rh_conges.repository.DemandeCongeRepository;
 import ma.projet.rh_conges.repository.EmployeRepository;
 import ma.projet.rh_conges.repository.TypeCongeRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +28,7 @@ public class DemandeCongeService {
     private final TypeCongeRepository typeCongeRepository;
     private final EmployeRepository employeRepository;
     private final JoursOuvresCalculator joursOuvres;
+    private final DroitsCongeCalculator droits;
 
     public List<DemandeConge> findAll() {
         return demandeCongeRepository.findAllWithDetails();
@@ -32,7 +36,7 @@ public class DemandeCongeService {
 
     public DemandeConge findById(Long id) {
         return demandeCongeRepository.findById(id)
-                .orElseThrow(() -> new DemandeCongeException("Demande introuvable avec l'id : " + id));
+                .orElseThrow(() -> new RessourceIntrouvableException("Demande introuvable : " + id));
     }
 
     /**
@@ -55,6 +59,11 @@ public class DemandeCongeService {
         Employe employe = chargerEmploye(demande.getEmploye());
         TypeConge type = chargerType(demande.getTypeConge());
 
+        if (type.isCalculLegal() && !droits.droitOuvert(employe.getDateEmbauche(), debut)) {
+            throw new DemandeCongeException("Le droit au congé annuel s'ouvre après 6 mois de service continu "
+                    + "(art. 231 du Code du travail).");
+        }
+
         int jours = joursOuvres.compter(debut, fin);
         if (jours == 0) {
             throw new DemandeCongeException("La période ne contient aucun jour ouvré (week-end ou jour férié).");
@@ -71,11 +80,11 @@ public class DemandeCongeService {
             throw new DemandeCongeException("Cette période chevauche une autre demande de l'employé.");
         }
 
+        int quota = quota(employe, type, debut.getYear(), autres);
         int dejaReserves = somme(autres, type.getId(), debut.getYear(),
                 EnumSet.of(StatutDemande.ACCEPTE, StatutDemande.EN_ATTENTE));
-        if (dejaReserves + jours > type.getQuotaAnnuel()) {
-            throw new QuotaDepasseException(type.getLibelle(), jours,
-                    Math.max(0, type.getQuotaAnnuel() - dejaReserves));
+        if (dejaReserves + jours > quota) {
+            throw new QuotaDepasseException(type.getLibelle(), jours, Math.max(0, quota - dejaReserves));
         }
 
         demande.setEmploye(employe);
@@ -93,10 +102,11 @@ public class DemandeCongeService {
         List<DemandeConge> autres = demandeCongeRepository.findByEmployeId(demande.getEmploye().getId()).stream()
                 .filter(d -> !Objects.equals(d.getId(), id))
                 .toList();
+        int quota = quota(demande.getEmploye(), type, annee, autres);
         int acceptes = somme(autres, type.getId(), annee, EnumSet.of(StatutDemande.ACCEPTE));
-        if (acceptes + demande.getNombreJours() > type.getQuotaAnnuel()) {
+        if (acceptes + demande.getNombreJours() > quota) {
             throw new QuotaDepasseException(type.getLibelle(), demande.getNombreJours(),
-                    Math.max(0, type.getQuotaAnnuel() - acceptes));
+                    Math.max(0, quota - acceptes));
         }
         demande.setStatut(StatutDemande.ACCEPTE);
         return demandeCongeRepository.save(demande);
@@ -117,6 +127,11 @@ public class DemandeCongeService {
         return demandeCongeRepository.findWithFilters(employeId, statut, departement, typeCongeId, dateDebut, dateFin);
     }
 
+    public Page<DemandeConge> rechercher(Long employeId, StatutDemande statut, String departement,
+                                         Long typeCongeId, LocalDate dateDebut, LocalDate dateFin, Pageable pageable) {
+        return demandeCongeRepository.rechercher(employeId, statut, departement, typeCongeId, dateDebut, dateFin, pageable);
+    }
+
     /** Jours ouvrés acceptés pour un employé, un type de congé et une année. */
     public int getJoursConsommes(Long employeId, Long typeCongeId, int annee) {
         return somme(demandeCongeRepository.findByEmployeId(employeId), typeCongeId, annee,
@@ -125,15 +140,33 @@ public class DemandeCongeService {
 
     /** Solde de l'employé pour chaque type de congé de l'année. */
     public List<SoldeConge> getSoldes(Long employeId, int annee) {
+        Employe employe = chargerEmploye(Employe.builder().id(employeId).build());
         List<DemandeConge> demandes = demandeCongeRepository.findByEmployeId(employeId);
         List<SoldeConge> soldes = new ArrayList<>();
         for (TypeConge type : typeCongeRepository.findAll()) {
+            int quota = quota(employe, type, annee, demandes);
+            int report = type.isCalculLegal() ? report(employe, type, annee, demandes) : 0;
             int consommes = somme(demandes, type.getId(), annee, EnumSet.of(StatutDemande.ACCEPTE));
             int enAttente = somme(demandes, type.getId(), annee, EnumSet.of(StatutDemande.EN_ATTENTE));
-            int restants = Math.max(0, type.getQuotaAnnuel() - consommes - enAttente);
-            soldes.add(new SoldeConge(type, type.getQuotaAnnuel(), consommes, enAttente, restants));
+            int restants = Math.max(0, quota - consommes - enAttente);
+            soldes.add(new SoldeConge(type, quota, report, consommes, enAttente, restants));
         }
         return soldes;
+    }
+
+    /**
+     * Quota de l'année pour un type de congé. Congé annuel légal : droits de l'année selon l'ancienneté
+     * + report des jours non pris l'année précédente (art. 240). Autres types : quota fixe.
+     */
+    int quota(Employe employe, TypeConge type, int annee, List<DemandeConge> demandes) {
+        if (!type.isCalculLegal()) return type.getQuotaAnnuel();
+        return droits.droitsAnnuels(employe.getDateEmbauche(), annee) + report(employe, type, annee, demandes);
+    }
+
+    private int report(Employe employe, TypeConge type, int annee, List<DemandeConge> demandes) {
+        int droitsPrecedents = droits.droitsAnnuels(employe.getDateEmbauche(), annee - 1);
+        int prisPrecedents = somme(demandes, type.getId(), annee - 1, EnumSet.of(StatutDemande.ACCEPTE));
+        return Math.max(0, droitsPrecedents - prisPrecedents);
     }
 
     // ---- Statistiques ----
@@ -203,7 +236,7 @@ public class DemandeCongeService {
             throw new DemandeCongeException("L'employé est obligatoire.");
         }
         return employeRepository.findById(employe.getId())
-                .orElseThrow(() -> new DemandeCongeException("Employé introuvable."));
+                .orElseThrow(() -> new RessourceIntrouvableException("Employé introuvable."));
     }
 
     private TypeConge chargerType(TypeConge type) {

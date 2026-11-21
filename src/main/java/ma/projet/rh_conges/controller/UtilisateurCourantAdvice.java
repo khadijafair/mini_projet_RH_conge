@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
 /** Expose l'utilisateur connecté et son rôle à toutes les vues. */
-@ControllerAdvice
+@ControllerAdvice(basePackages = "ma.projet.rh_conges.controller")
 @RequiredArgsConstructor
 public class UtilisateurCourantAdvice {
 

@@ -62,6 +62,12 @@ class JoursOuvresCalculatorTest {
     }
 
     @Test
+    void enJoursOuvrables_leSamediCompte() {
+        JoursOuvresCalculator ouvrables = new JoursOuvresCalculator("", true);
+        assertThat(ouvrables.compter(d("2026-11-23"), d("2026-11-29"))).isEqualTo(6);
+    }
+
+    @Test
     void finDAnnee_nouvelAnExclu() {
         // lundi 28 décembre 2026 au vendredi 1er janvier 2027 : le 1er janvier est férié
         assertThat(calc.compter(d("2026-12-28"), d("2027-01-01"))).isEqualTo(4);

@@ -23,6 +23,8 @@
         <strong th:text="${employe.nom}">Employé</strong>
         <span class="badge bg-secondary bg-opacity-10 text-secondary ms-2" th:text="${employe.departement}"></span>
         <span class="text-muted small ms-2">— en jours ouvrés (hors week-ends et jours fériés)</span>
+        <br/><small class="text-muted">Congé annuel : 1,5 jour par mois de service, +1,5 jour par tranche de 5 ans
+            d'ancienneté (30 jours maximum), report des jours non pris de l'année précédente (Code du travail, art. 231, 232, 240).</small>
     </p>
 
     <div class="card border-0 shadow-sm">
@@ -31,7 +33,8 @@
                 <thead class="table-light">
                 <tr>
                     <th>Type de congé</th>
-                    <th class="text-end">Quota</th>
+                    <th class="text-end">Droits</th>
+                    <th class="text-end">dont report</th>
                     <th class="text-end">Pris</th>
                     <th class="text-end">En attente</th>
                     <th class="text-end">Restants</th>
@@ -42,6 +45,7 @@
                 <tr th:each="s : ${soldes}">
                     <td class="fw-semibold" th:text="${s.type().libelle}"></td>
                     <td class="text-end" th:text="${s.quota()}"></td>
+                    <td class="text-end text-muted" th:text="${s.report() > 0 ? s.report() : '–'}"></td>
                     <td class="text-end" th:text="${s.consommes()}"></td>
                     <td class="text-end" th:text="${s.enAttente()}"></td>
                     <td class="text-end fw-bold"

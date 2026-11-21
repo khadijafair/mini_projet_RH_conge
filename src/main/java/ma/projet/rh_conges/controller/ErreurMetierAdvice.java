@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /** Une règle métier non traitée par le contrôleur ramène à la liste avec un message clair. */
-@ControllerAdvice
+@ControllerAdvice(basePackages = "ma.projet.rh_conges.controller")
 public class ErreurMetierAdvice {
 
     @ExceptionHandler(DemandeCongeException.class)

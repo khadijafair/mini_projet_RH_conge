@@ -27,7 +27,7 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
 
         // ---- Types de congé ----
-        TypeConge ca  = typeCongeRepo.save(TypeConge.builder().libelle("Congé Annuel").quotaAnnuel(30).build());
+        TypeConge ca  = typeCongeRepo.save(TypeConge.builder().libelle("Congé Annuel").quotaAnnuel(30).calculLegal(true).build());
         TypeConge mal = typeCongeRepo.save(TypeConge.builder().libelle("Congé Maladie").quotaAnnuel(15).build());
         TypeConge mat = typeCongeRepo.save(TypeConge.builder().libelle("Congé Maternité").quotaAnnuel(98).build());
         TypeConge exc = typeCongeRepo.save(TypeConge.builder().libelle("Congé Exceptionnel").quotaAnnuel(5).build());

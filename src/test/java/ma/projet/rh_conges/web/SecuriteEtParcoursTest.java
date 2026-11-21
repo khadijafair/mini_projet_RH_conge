@@ -235,11 +235,11 @@ class SecuriteEtParcoursTest {
         LocalDate lundi = lundiLibre();
         long avant = demandeRepo.count();
 
-        // 8 semaines de congé annuel : bien au-delà des 30 jours
+        // 10 semaines de congé annuel : au-delà des droits de l'année et du report
         MvcResult res = mvc.perform(post("/demandes/save").with(csrf())
                         .param("typeConge.id", annuel.getId().toString())
                         .param("dateDebut", lundi.toString())
-                        .param("dateFin", lundi.plusWeeks(8).toString()))
+                        .param("dateFin", lundi.plusWeeks(10).toString()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("demande/form"))
                 .andReturn();

@@ -3,6 +3,8 @@ package ma.projet.rh_conges.repository;
 import ma.projet.rh_conges.entity.DemandeConge;
 import ma.projet.rh_conges.entity.Employe;
 import ma.projet.rh_conges.entity.StatutDemande;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,6 +35,19 @@ public interface DemandeCongeRepository extends JpaRepository<DemandeConge, Long
             @Param("typeCongeId") Long typeCongeId,
             @Param("dateDebut") LocalDate dateDebut,
             @Param("dateFin") LocalDate dateFin
+    );
+
+    /** Même recherche, paginée et triable (API REST). */
+    @Query(value = "SELECT d FROM DemandeConge d JOIN FETCH d.employe e JOIN FETCH d.typeConge t WHERE (:employeId IS NULL OR e.id = :employeId) AND (:statut IS NULL OR d.statut = :statut) AND (:departement IS NULL OR e.departement = :departement) AND (:typeCongeId IS NULL OR t.id = :typeCongeId) AND (:dateDebut IS NULL OR d.dateDebut >= :dateDebut) AND (:dateFin IS NULL OR d.dateFin <= :dateFin)",
+            countQuery = "SELECT COUNT(d) FROM DemandeConge d JOIN d.employe e JOIN d.typeConge t WHERE (:employeId IS NULL OR e.id = :employeId) AND (:statut IS NULL OR d.statut = :statut) AND (:departement IS NULL OR e.departement = :departement) AND (:typeCongeId IS NULL OR t.id = :typeCongeId) AND (:dateDebut IS NULL OR d.dateDebut >= :dateDebut) AND (:dateFin IS NULL OR d.dateFin <= :dateFin)")
+    Page<DemandeConge> rechercher(
+            @Param("employeId") Long employeId,
+            @Param("statut") StatutDemande statut,
+            @Param("departement") String departement,
+            @Param("typeCongeId") Long typeCongeId,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin,
+            Pageable pageable
     );
 
     @Query("SELECT d FROM DemandeConge d JOIN FETCH d.employe JOIN FETCH d.typeConge ORDER BY d.dateDebut DESC")

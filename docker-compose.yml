@@ -1,4 +1,4 @@
-# Lancement : RH_ADMIN_PASSWORD=<mot de passe RH> docker compose up --build
+# Lancement : RH_ADMIN_PASSWORD=<mot de passe RH> JWT_SECRET=<32 caractères min.> docker compose up --build
 services:
   db:
     image: mysql:8.4
@@ -26,6 +26,7 @@ services:
       DB_USER: rh
       DB_PASSWORD: ${DB_PASSWORD:-rh_conges_dev}
       RH_ADMIN_PASSWORD: ${RH_ADMIN_PASSWORD:?Définissez RH_ADMIN_PASSWORD (8 caractères minimum)}
+      JWT_SECRET: ${JWT_SECRET:?Définissez JWT_SECRET (32 caractères minimum)}
     ports:
       - "8080:8080"
 

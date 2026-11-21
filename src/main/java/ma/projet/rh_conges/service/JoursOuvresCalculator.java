@@ -1,5 +1,6 @@
 package ma.projet.rh_conges.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -38,8 +39,20 @@ public class JoursOuvresCalculator {
     private static final MonthDay FETE_DE_L_UNITE = MonthDay.of(10, 31);  // fériée depuis 2026
 
     private final Set<LocalDate> feriesMobiles;
+    private final boolean samediOuvrable;
 
-    public JoursOuvresCalculator(@Value("${rh.jours-feries-mobiles:}") String feriesMobiles) {
+    public JoursOuvresCalculator(String feriesMobiles) {
+        this(feriesMobiles, false);
+    }
+
+    /**
+     * @param samediOuvrable vrai pour compter en jours ouvrables (lundi au samedi), comme le Code du travail ;
+     *                       faux (défaut) pour compter en jours ouvrés (lundi au vendredi).
+     */
+    @Autowired
+    public JoursOuvresCalculator(@Value("${rh.jours-feries-mobiles:}") String feriesMobiles,
+                                 @Value("${rh.samedi-ouvrable:false}") boolean samediOuvrable) {
+        this.samediOuvrable = samediOuvrable;
         if (feriesMobiles == null || feriesMobiles.isBlank()) {
             this.feriesMobiles = Collections.emptySet();
         } else {
@@ -61,7 +74,9 @@ public class JoursOuvresCalculator {
 
     public boolean estOuvre(LocalDate date) {
         DayOfWeek jour = date.getDayOfWeek();
-        return jour != DayOfWeek.SATURDAY && jour != DayOfWeek.SUNDAY && !estFerie(date);
+        if (jour == DayOfWeek.SUNDAY) return false;
+        if (jour == DayOfWeek.SATURDAY && !samediOuvrable) return false;
+        return !estFerie(date);
     }
 
     /** Nombre de jours ouvrés entre deux dates incluses ; 0 si la période est vide ou inversée. */

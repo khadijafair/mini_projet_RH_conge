@@ -48,6 +48,14 @@
                          th:errors="*{quotaAnnuel}"></div>
                 </div>
 
+                <div class="form-check mb-4">
+                    <input type="checkbox" th:field="*{calculLegal}" class="form-check-input" id="calculLegal"/>
+                    <label class="form-check-label" for="calculLegal">
+                        Congé annuel payé : droits calculés selon le Code du travail (ancienneté et report),
+                        le quota ci-dessus est alors ignoré
+                    </label>
+                </div>
+
                 <div class="d-flex gap-2 justify-content-end">
                     <a th:href="@{/types-conge}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-1"></i>Annuler

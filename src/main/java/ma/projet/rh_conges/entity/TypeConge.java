@@ -27,6 +27,10 @@ public class TypeConge {
     @Column(nullable = false)
     private int quotaAnnuel;
 
+    /** Vrai pour le congé annuel payé : le quota est calculé selon le Code du travail (ancienneté, report). */
+    @Column(name = "calcul_legal", nullable = false)
+    private boolean calculLegal;
+
     // Pas de cascade : un type utilisé par des demandes ne peut pas être supprimé.
     @OneToMany(mappedBy = "typeConge", fetch = FetchType.LAZY)
     @ToString.Exclude
