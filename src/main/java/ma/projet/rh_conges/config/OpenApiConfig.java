@@ -1,0 +1,24 @@
+package ma.projet.rh_conges.config;
+
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/** Documentation OpenAPI : /swagger-ui.html (bouton « Authorize » pour coller le jeton JWT). */
+@Configuration
+public class OpenApiConfig {
+
+    @Bean
+    public OpenAPI openApi() {
+        return new OpenAPI()
+                .info(new Info().title("RH Congés — API").version("v1")
+                        .description("Gestion des demandes de congé : jours ouvrés, droits légaux, validation RH."))
+                .components(new Components().addSecuritySchemes("jwt",
+                        new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")))
+                .addSecurityItem(new SecurityRequirement().addList("jwt"));
+    }
+}

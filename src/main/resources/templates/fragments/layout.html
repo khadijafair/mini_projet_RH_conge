@@ -16,7 +16,7 @@
 <body>
 
 <div th:fragment="navbar">
-    <!-- NAVBAR -->
+    <!-- NAVBAR : liens selon le rôle (RH ou employé) -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" th:href="@{/demandes}">
@@ -33,22 +33,41 @@
                             <i class="bi bi-file-earmark-text me-1"></i>Demandes
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/employes}">
-                            <i class="bi bi-people me-1"></i>Employés
+                    <li class="nav-item" th:if="${employeConnecte != null}">
+                        <a class="nav-link" th:href="@{/soldes}">
+                            <i class="bi bi-pie-chart me-1"></i>Mon solde
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/types-conge}">
-                            <i class="bi bi-tags me-1"></i>Types de Congé
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/stats}">
-                            <i class="bi bi-bar-chart-line me-1"></i>Statistiques
-                        </a>
-                    </li>
+                    <th:block th:if="${estRH}">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/employes}">
+                                <i class="bi bi-people me-1"></i>Employés
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/types-conge}">
+                                <i class="bi bi-tags me-1"></i>Types de Congé
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/stats}">
+                                <i class="bi bi-bar-chart-line me-1"></i>Statistiques
+                            </a>
+                        </li>
+                    </th:block>
                 </ul>
+                <div class="d-flex align-items-center gap-3" th:if="${nomUtilisateur != null}">
+                    <span class="text-white small">
+                        <i class="bi bi-person-circle me-1"></i>
+                        <span th:text="${nomUtilisateur}">utilisateur</span>
+                        <span class="badge bg-light text-primary ms-1" th:text="${estRH} ? 'RH' : 'Employé'">RH</span>
+                    </span>
+                    <form th:action="@{/logout}" method="post" class="m-0">
+                        <button type="submit" class="btn btn-sm btn-outline-light">
+                            <i class="bi bi-box-arrow-right me-1"></i>Déconnexion
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </nav>

@@ -10,14 +10,7 @@
 </head>
 <body>
 
-<nav class="navbar navbar-dark bg-primary shadow-sm">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" th:href="@{/demandes}">
-            <i class="bi bi-calendar3-week me-2"></i>RH Congés
-        </a>
-    </div>
-</nav>
-
+<div th:replace="~{fragments/layout :: navbar}"></div>
 <div class="container py-4" style="max-width:700px">
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
@@ -39,7 +32,14 @@
                 <input type="hidden" th:field="*{id}"/>
                 <input type="hidden" th:field="*{statut}"/>
 
-                <div class="mb-3">
+                <!-- Erreurs métier : quota, chevauchement, jours ouvrés -->
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span>
+                </div>
+
+                <!-- Le RH choisit l'employé ; un employé dépose pour lui-même -->
+                <div class="mb-3" th:if="${estRH}">
                     <label class="form-label fw-semibold">Employé <span class="text-danger">*</span></label>
                     <select th:field="*{employe.id}" class="form-select"
                             th:classappend="${#fields.hasErrors('employe')} ? 'is-invalid'">
@@ -52,6 +52,13 @@
                     <div class="invalid-feedback" th:if="${#fields.hasErrors('employe')}"
                          th:errors="*{employe}"></div>
                 </div>
+                <div class="mb-3" th:unless="${estRH}">
+                    <label class="form-label fw-semibold">Employé</label>
+                    <input type="text" class="form-control" readonly
+                           th:value="${employeConnecte != null ? employeConnecte.nom : ''}"/>
+                    <input type="hidden" name="employe.id"
+                           th:value="${employeConnecte != null ? employeConnecte.id : ''}"/>
+                </div>
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Type de congé <span class="text-danger">*</span></label>
@@ -60,7 +67,7 @@
                         <option value="">-- Sélectionner un type --</option>
                         <option th:each="t : ${types}"
                                 th:value="${t.id}"
-                                th:text="${t.libelle + ' (quota: ' + t.quotaAnnuel + ' j)'}">
+                                th:text="${t.calculLegal ? t.libelle + ' (droits selon ancienneté)' : t.libelle + ' (quota : ' + t.quotaAnnuel + ' j)'}">
                         </option>
                     </select>
                     <div class="invalid-feedback" th:if="${#fields.hasErrors('typeConge')}"

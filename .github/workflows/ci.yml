@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    name: Build, tests et couverture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Compilation, tests et rapport JaCoCo
+        run: mvn -B verify
+
+      - name: Résumé (tests et couverture)
+        if: always()
+        run: |
+          python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import csv, glob, xml.etree.ElementTree as ET
+          tests = fails = 0
+          for f in glob.glob("target/surefire-reports/TEST-*.xml"):
+              r = ET.parse(f).getroot()
+              tests += int(r.get("tests")); fails += int(r.get("failures")) + int(r.get("errors"))
+          print(f"### Tests : {tests - fails}/{tests} réussis")
+          try:
+              rows = list(csv.DictReader(open("target/site/jacoco/jacoco.csv")))
+              def pct(k):
+                  m = sum(int(r[k + "_MISSED"]) for r in rows); c = sum(int(r[k + "_COVERED"]) for r in rows)
+                  return 100 * c / (m + c) if m + c else 0
+              print(f"### Couverture : lignes {pct('LINE'):.1f} %, branches {pct('BRANCH'):.1f} %")
+              print("| Paquet | Lignes |\n|---|---|")
+              pk = {}
+              for r in rows:
+                  m, c = pk.get(r["PACKAGE"], (0, 0)); pk[r["PACKAGE"]] = (m + int(r["LINE_MISSED"]), c + int(r["LINE_COVERED"]))
+              for p, (m, c) in sorted(pk.items()):
+                  print(f"| {p} | {100 * c / (m + c):.0f} % |" if m + c else f"| {p} | - |")
+          except FileNotFoundError:
+              print("Rapport JaCoCo absent.")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rapports-tests-couverture
+          path: |
+            target/site/jacoco/
+            target/surefire-reports/
+
+  docker:
+    name: Image Docker
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construction de l'image
+        run: docker build -t rh-conges:ci .

@@ -2,10 +2,10 @@ package ma.projet.rh_conges.entity;
 
 
 import jakarta.persistence.*;
-        import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
-        import java.util.List;
+import java.util.List;
 
 @Entity
 @Table(name = "types_conge")
@@ -27,7 +27,12 @@ public class TypeConge {
     @Column(nullable = false)
     private int quotaAnnuel;
 
-    @OneToMany(mappedBy = "typeConge", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    /** Vrai pour le congé annuel payé : le quota est calculé selon le Code du travail (ancienneté, report). */
+    @Column(name = "calcul_legal", nullable = false)
+    private boolean calculLegal;
+
+    // Pas de cascade : un type utilisé par des demandes ne peut pas être supprimé.
+    @OneToMany(mappedBy = "typeConge", fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<DemandeConge> demandes;

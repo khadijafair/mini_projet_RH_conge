@@ -3,13 +3,18 @@ package ma.projet.rh_conges.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import ma.projet.rh_conges.entity.*;
+import ma.projet.rh_conges.exception.DemandeCongeException;
+import ma.projet.rh_conges.security.UtilisateurCourant;
 import ma.projet.rh_conges.service.*;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import java.time.LocalDate;
 
 @Controller
@@ -20,6 +25,7 @@ public class DemandeCongeController {
     private final DemandeCongeService demandeCongeService;
     private final EmployeService employeService;
     private final TypeCongeService typeCongeService;
+    private final UtilisateurCourant utilisateurCourant;
 
     @GetMapping
     public String list(
@@ -28,20 +34,29 @@ public class DemandeCongeController {
             @RequestParam(required = false) Long typeCongeId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateDebut,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFin,
+            Authentication auth,
             Model model) {
 
         StatutDemande statutEnum = null;
-        if (statut != null && !statut.isEmpty()) {
-            try { statutEnum = StatutDemande.valueOf(statut); } catch (Exception ignored) {}
+        if (statut != null && !statut.isBlank()) {
+            try { statutEnum = StatutDemande.valueOf(statut); } catch (IllegalArgumentException ignored) {}
+        }
+        String dept = (departement == null || departement.isBlank()) ? null : departement;
+
+        // Un employé ne voit que ses propres demandes.
+        Long employeId = null;
+        if (!utilisateurCourant.estRH(auth)) {
+            Employe moi = utilisateurCourant.employe(auth);
+            employeId = moi != null ? moi.getId() : -1L;
         }
 
         model.addAttribute("demandes",
-                demandeCongeService.findWithFilters(statutEnum, departement, typeCongeId, dateDebut, dateFin));
+                demandeCongeService.findWithFilters(employeId, statutEnum, dept, typeCongeId, dateDebut, dateFin));
         model.addAttribute("statuts", StatutDemande.values());
         model.addAttribute("departements", employeService.findAllDepartements());
         model.addAttribute("types", typeCongeService.findAll());
         model.addAttribute("selectedStatut", statut);
-        model.addAttribute("selectedDept", departement);
+        model.addAttribute("selectedDept", dept);
         model.addAttribute("selectedType", typeCongeId);
         model.addAttribute("selectedDebut", dateDebut);
         model.addAttribute("selectedFin", dateFin);
@@ -49,74 +64,92 @@ public class DemandeCongeController {
     }
 
     @GetMapping("/new")
-    public String showCreateForm(Model model) {
-        model.addAttribute("demande", new DemandeConge());
-        model.addAttribute("employes", employeService.findAll());
-        model.addAttribute("types", typeCongeService.findAll());
+    public String showCreateForm(Authentication auth, Model model) {
+        DemandeConge demande = new DemandeConge();
+        if (!utilisateurCourant.estRH(auth)) {
+            demande.setEmploye(utilisateurCourant.employe(auth));
+        }
+        model.addAttribute("demande", demande);
+        remplirListes(model);
         return "demande/form";
     }
 
     @PostMapping("/save")
     public String save(@Valid @ModelAttribute("demande") DemandeConge demande,
                        BindingResult result,
+                       Authentication auth,
                        Model model,
                        RedirectAttributes ra) {
-        if (result.hasErrors()) {
-            model.addAttribute("employes", employeService.findAll());
-            model.addAttribute("types", typeCongeService.findAll());
+        boolean rh = utilisateurCourant.estRH(auth);
+        if (demande.getId() != null) {
+            utilisateurCourant.verifierModifiable(auth, demandeCongeService.findById(demande.getId()));
+        }
+        if (!rh) {
+            // L'employé ne peut déposer une demande que pour lui-même.
+            Employe moi = utilisateurCourant.employe(auth);
+            if (moi == null) throw new AccessDeniedException("Aucune fiche employé liée à ce compte");
+            demande.setEmploye(moi);
+        }
+        // Pour un employé, le champ « employé » est imposé : ses éventuelles erreurs de saisie ne comptent pas.
+        boolean erreurs = rh ? result.hasErrors()
+                : result.hasGlobalErrors() || result.getFieldErrors().stream()
+                        .anyMatch(f -> !f.getField().startsWith("employe"));
+        if (erreurs) {
+            remplirListes(model);
             return "demande/form";
         }
-        if (demande.getDateFin().isBefore(demande.getDateDebut())) {
-            result.rejectValue("dateFin", "error.dateFin", "La date de fin doit être après la date de début");
-            model.addAttribute("employes", employeService.findAll());
-            model.addAttribute("types", typeCongeService.findAll());
+        try {
+            demandeCongeService.soumettreDemande(demande);
+        } catch (DemandeCongeException e) {
+            result.reject("demande.invalide", e.getMessage());
+            remplirListes(model);
             return "demande/form";
         }
-        demandeCongeService.soumettreDemande(demande);
         ra.addFlashAttribute("successMsg", "Demande soumise avec succès !");
         return "redirect:/demandes";
     }
 
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model) {
-        model.addAttribute("demande", demandeCongeService.findById(id));
-        model.addAttribute("employes", employeService.findAll());
-        model.addAttribute("types", typeCongeService.findAll());
+    public String showEditForm(@PathVariable Long id, Authentication auth, Model model) {
+        DemandeConge demande = demandeCongeService.findById(id);
+        utilisateurCourant.verifierModifiable(auth, demande);
+        model.addAttribute("demande", demande);
+        remplirListes(model);
         return "demande/form";
     }
 
-    @GetMapping("/valider/{id}")
+    @PostMapping("/{id}/valider")
     public String valider(@PathVariable Long id, RedirectAttributes ra) {
-        demandeCongeService.valider(id);
-        ra.addFlashAttribute("successMsg", "Demande validée ✔");
+        try {
+            demandeCongeService.valider(id);
+            ra.addFlashAttribute("successMsg", "Demande validée ✔");
+        } catch (DemandeCongeException e) {
+            ra.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/demandes";
     }
 
-    @GetMapping("/rejeter/{id}")
+    @PostMapping("/{id}/rejeter")
     public String rejeter(@PathVariable Long id, RedirectAttributes ra) {
-        demandeCongeService.rejeter(id);
-        ra.addFlashAttribute("errorMsg", "Demande rejetée ✖");
+        try {
+            demandeCongeService.rejeter(id);
+            ra.addFlashAttribute("errorMsg", "Demande rejetée ✖");
+        } catch (DemandeCongeException e) {
+            ra.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/demandes";
     }
 
-    @GetMapping("/delete/{id}")
-    public String delete(@PathVariable Long id, RedirectAttributes ra) {
+    @PostMapping("/{id}/supprimer")
+    public String delete(@PathVariable Long id, Authentication auth, RedirectAttributes ra) {
+        utilisateurCourant.verifierModifiable(auth, demandeCongeService.findById(id));
         demandeCongeService.deleteById(id);
         ra.addFlashAttribute("successMsg", "Demande supprimée.");
         return "redirect:/demandes";
     }
 
-    @GetMapping("/quota/{employeId}/{typeCongeId}")
-    public String quota(@PathVariable Long employeId, @PathVariable Long typeCongeId, Model model) {
-        int annee = LocalDate.now().getYear();
-        int consommes = demandeCongeService.getJoursConsommes(employeId, typeCongeId, annee);
-        TypeConge type = typeCongeService.findById(typeCongeId);
-        Employe employe = employeService.findById(employeId);
-        model.addAttribute("employe", employe);
-        model.addAttribute("type", type);
-        model.addAttribute("consommes", consommes);
-        model.addAttribute("restants", Math.max(0, type.getQuotaAnnuel() - consommes));
-        model.addAttribute("annee", annee);
-        return "demande/quota";
+    private void remplirListes(Model model) {
+        model.addAttribute("employes", employeService.findAll());
+        model.addAttribute("types", typeCongeService.findAll());
     }
 }

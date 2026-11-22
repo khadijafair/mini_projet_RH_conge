@@ -2,6 +2,7 @@ package ma.projet.rh_conges.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import ma.projet.rh_conges.exception.DemandeCongeException;
 import ma.projet.rh_conges.entity.TypeConge;
 import ma.projet.rh_conges.service.TypeCongeService;
 import org.springframework.stereotype.Controller;
@@ -45,13 +46,15 @@ public class TypeCongeController {
         return "typeconge/form";
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/{id}/supprimer")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         try {
             typeCongeService.deleteById(id);
             ra.addFlashAttribute("successMsg", "Type de congé supprimé.");
+        } catch (DemandeCongeException e) {
+            ra.addFlashAttribute("errorMsg", e.getMessage());
         } catch (Exception e) {
-            ra.addFlashAttribute("errorMsg", "Impossible de supprimer ce type (des demandes lui sont liées).");
+            ra.addFlashAttribute("errorMsg", "Impossible de supprimer ce type de congé.");
         }
         return "redirect:/types-conge";
     }
